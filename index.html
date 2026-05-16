@@ -300,8 +300,14 @@
             };
             recognition.onresult = (e) => {
                 const text = e.results[0][0].transcript;
-                document.getElementById('manual-in').value = text;
-                handleAnswer(text);
+                const input = document.getElementById('manual-in');
+                input.value = text;
+                input.classList.add('border-gold', 'scale-105'); // Efecto visual de que se recibió
+                
+                setTimeout(() => {
+                    input.classList.remove('border-gold', 'scale-105');
+                    handleAnswer(text);
+                }, 200); 
             };
             recognition.onerror = (e) => {
                 console.error("Speech Error:", e.error);
