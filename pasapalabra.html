@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pasapalabra – El Rosco</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0e1a; --surface:#111827; --surface2:#1c2535;
+    --gold:#f5c518; --gold2:#e6a800; --blue:#2563eb;
+    --green:#22c55e; --red:#ef4444; --gray:#6b7280;
+    --text:#f1f5f9; --text2:#94a3b8; --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);letter-spacing:4px;color:var(--gold);text-align:center;margin-bottom:2px;text-shadow:0 0 30px rgba(245,197,24,.3)}
+  .sub{font-size:12px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:20px}
+
+  /* SETUP */
+  #setup{width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--surface);border:1px solid #2a3448;border-radius:var(--radius);padding:20px}
+  .card h2{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px}
+  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tbtn{background:var(--surface2);border:2px solid #2a3448;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;padding:10px 6px;border-radius:8px;cursor:pointer;transition:all .12s;text-align:center}
+  .tbtn:hover{border-color:var(--gold);color:var(--gold)}
+  .tbtn.on{background:var(--gold);border-color:var(--gold);color:#000}
+  .tcustom{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .tcustom label{font-size:12px;color:var(--text2)}
+  .tcustom input{background:var(--surface2);border:1px solid #2a3448;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;padding:7px 10px;border-radius:8px;width:80px;outline:none}
+  .startbtn{width:100%;background:var(--gold);color:#000;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;border:none;border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .12s;box-shadow:0 4px 20px rgba(245,197,24,.25)}
+  .startbtn:hover{background:var(--gold2);transform:translateY(-1px)}
+
+  /* GAME */
+  #game{display:none;width:100%;max-width:820px;flex-direction:column;align-items:center;gap:12px}
+
+  .topbar{display:flex;align-items:center;gap:12px;width:100%;background:var(--surface);border-radius:var(--radius);padding:10px 16px;border:1px solid #2a3448}
+  .tdisp{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--gold);min-width:66px;letter-spacing:2px}
+  .tdisp.warn{color:var(--red);animation:pulse .5s infinite alternate}
+  @keyframes pulse{from{opacity:1}to{opacity:.35}}
+  .ptrack{flex:1;height:7px;background:#2a3448;border-radius:4px;overflow:hidden}
+  .pfill{height:100%;background:var(--gold);transition:width 1s linear;border-radius:4px}
+  .pills{display:flex;gap:6px}
+  .pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .p-ok{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+  .p-no{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+  .p-sk{background:rgba(245,197,24,.12);color:var(--gold);border:1px solid rgba(245,197,24,.3)}
+  .exitbtn{background:transparent;border:1px solid #3a4a66;color:var(--text2);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all .12s;white-space:nowrap}
+  .exitbtn:hover{border-color:var(--red);color:var(--red)}
+
+  /* ROSCO */
+  .rosco-wrap{position:relative;width:min(420px,88vw);height:min(420px,88vw)}
+  #rsvg{width:100%;height:100%}
+  .c-def circle{fill:#1c2535;stroke:#3a4a66;stroke-width:2}
+  .c-def text{fill:#f1f5f9}
+  .c-act circle{fill:#1a2a50;stroke:#f5c518;stroke-width:3;filter:drop-shadow(0 0 6px rgba(245,197,24,.7))}
+  .c-act text{fill:#f5c518}
+  .c-ok  circle{fill:#14532d;stroke:#22c55e;stroke-width:2.5}
+  .c-ok  text{fill:#86efac}
+  .c-no  circle{fill:#450a0a;stroke:#ef4444;stroke-width:2.5}
+  .c-no  text{fill:#fca5a5}
+  .c-sk  circle{fill:#2a2000;stroke:#f5c518;stroke-width:2;stroke-dasharray:5,3}
+  .c-sk  text{fill:#f5c518}
+
+  /* CLUE */
+  .clue{width:100%;background:var(--surface);border:1px solid #2a3448;border-radius:var(--radius);padding:16px 20px}
+  .cluetop{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .clueltr{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;color:var(--gold);line-height:1}
+  .cluetype{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+  .cluetext{font-size:1.05rem;font-weight:600;color:var(--text);line-height:1.5;min-height:2.4em}
+
+  /* VOICE */
+  .varea{width:100%;background:var(--surface);border:1px solid #2a3448;border-radius:var(--radius);padding:16px 20px;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .micbtn{width:68px;height:68px;border-radius:50%;border:3px solid var(--gold);background:transparent;color:var(--gold);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+  .micbtn.on{background:rgba(245,197,24,.12);animation:mpulse .8s infinite}
+  @keyframes mpulse{0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}50%{box-shadow:0 0 0 14px rgba(245,197,24,0)}}
+  .micbtn.nosup{border-color:var(--gray);color:var(--gray);cursor:not-allowed;opacity:.45}
+  .tbox{min-height:38px;width:100%;background:var(--surface2);border:1px solid #2a3448;border-radius:8px;padding:9px 14px;font-size:1rem;font-weight:600;color:var(--text2);text-align:center;font-style:italic;transition:color .15s}
+  .tbox.heard{color:var(--text);font-style:normal}
+  .fbmsg{font-size:1.05rem;font-weight:700;min-height:26px;text-align:center}
+  .fbmsg.ok{color:var(--green)} .fbmsg.no{color:var(--red)} .fbmsg.pp{color:var(--gold)}
+  .mrow{display:flex;gap:8px;width:100%}
+  .minput{flex:1;background:var(--surface2);border:1px solid #2a3448;color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;padding:9px 12px;border-radius:8px;outline:none}
+  .minput:focus{border-color:var(--gold)}
+  .abtn{background:var(--surface2);border:1px solid #2a3448;color:var(--text2);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;padding:9px 14px;border-radius:8px;cursor:pointer;transition:all .12s;white-space:nowrap}
+  .abtn:hover{border-color:var(--gold);color:var(--gold)}
+  .abtn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+  .abtn.pri:hover{background:#1d4ed8}
+  .vhint{font-size:11px;color:var(--text2);text-align:center}
+
+  /* MODAL */
+  #exitmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+  #exitmodal.show{display:flex}
+  .mbox{background:var(--surface);border:1px solid #3a4a66;border-radius:var(--radius);padding:28px 32px;max-width:320px;width:90%;text-align:center}
+  .mbox h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+  .mbox p{font-size:13px;color:var(--text2);margin-bottom:18px}
+  .mbtns{display:flex;gap:10px;justify-content:center}
+  .mbtn{font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;border-radius:8px;cursor:pointer;border:none;transition:all .12s}
+  .mbtn.c{background:var(--surface2);color:var(--text2);border:1px solid #3a4a66}
+  .mbtn.c:hover{color:var(--text)}
+  .mbtn.x{background:var(--red);color:#fff}
+  .mbtn.x:hover{background:#dc2626}
+
+  /* END */
+  #end{display:none;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:460px}
+  .ecard{background:var(--surface);border:1px solid #2a3448;border-radius:var(--radius);padding:28px;text-align:center;width:100%}
+  .etitle{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;margin-bottom:6px}
+  .estats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  .estat{background:var(--surface2);border-radius:8px;padding:14px 6px}
+  .estat .v{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;line-height:1}
+  .estat .l{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+  .v.c{color:var(--green)} .v.w{color:var(--red)} .v.s{color:var(--gold)}
+  .rebtn{width:100%;background:var(--gold);color:#000;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;border:none;border-radius:var(--radius);padding:13px;cursor:pointer;transition:all .12s}
+  .rebtn:hover{background:var(--gold2)}
+</style>
+</head>
+<body>
+<h1>PASAPALABRA</h1>
+<p class="sub">El Rosco</p>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="card">
+    <h2>⏱ Tiempo de juego</h2>
+    <div class="tgrid">
+      <button class="tbtn" onclick="selT(60,this)">1 min</button>
+      <button class="tbtn on" onclick="selT(120,this)">2 min</button>
+      <button class="tbtn" onclick="selT(180,this)">3 min</button>
+      <button class="tbtn" onclick="selT(300,this)">5 min</button>
+    </div>
+    <div class="tcustom">
+      <label>Personalizado (seg):</label>
+      <input type="number" id="ctinput" min="30" max="600" placeholder="ej: 90" oninput="selTC(this.value)">
+    </div>
+  </div>
+  <div class="card">
+    <h2>🎙 Cómo jugar</h2>
+    <p style="font-size:13px;color:var(--text2);line-height:1.75">
+      La compu <strong style="color:var(--text)">lee la pista</strong> y abre el micrófono solo.<br>
+      Decí tu respuesta con la voz.<br>
+      Decí <strong style="color:var(--gold)">"pasapalabra"</strong> para saltear → <span style="color:var(--gold)">amarillo</span>.<br>
+      <span style="color:var(--green)">Verde</span> = correcto &nbsp;·&nbsp; <span style="color:var(--red)">Rojo</span> = incorrecto.<br>
+      También podés escribir abajo.
+    </p>
+  </div>
+  <button class="startbtn" onclick="startGame()">🎮 ¡JUGAR!</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="topbar">
+    <div class="tdisp" id="tdisp">2:00</div>
+    <div class="ptrack"><div class="pfill" id="pfill"></div></div>
+    <div class="pills">
+      <div class="pill p-ok">✓ <span id="sc">0</span></div>
+      <div class="pill p-no">✗ <span id="sw">0</span></div>
+      <div class="pill p-sk">↩ <span id="ss">0</span></div>
+    </div>
+    <button class="exitbtn" onclick="askExit()">✕ Salir</button>
+  </div>
+
+  <div class="rosco-wrap">
+    <svg id="rsvg" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="clue">
+    <div class="cluetop">
+      <div class="clueltr" id="clueltr">A</div>
+      <div class="cluetype" id="cluetype">Empieza con A</div>
+    </div>
+    <div class="cluetext" id="cluetext">Cargando...</div>
+  </div>
+
+  <div class="varea">
+    <button class="micbtn" id="micbtn" onclick="toggleMic()" title="Hablar">🎙</button>
+    <div class="tbox" id="tbox">Presioná 🎙 y hablá...</div>
+    <div class="fbmsg" id="fbmsg"></div>
+    <div class="mrow">
+      <input class="minput" id="minput" type="text" placeholder="O escribí tu respuesta..." onkeydown="if(event.key==='Enter')submitM()">
+      <button class="abtn pri" onclick="submitM()">✓</button>
+      <button class="abtn" onclick="skipLetter()">Pasar →</button>
+    </div>
+    <div class="vhint" id="vhint">El micrófono se abre solo después de cada pista · Decí "pasapalabra" para saltear</div>
+  </div>
+</div>
+
+<!-- EXIT MODAL -->
+<div id="exitmodal">
+  <div class="mbox">
+    <h3>¿Salir del juego?</h3>
+    <p>Perdés el progreso de esta partida.</p>
+    <div class="mbtns">
+      <button class="mbtn c" onclick="closeModal()">Seguir jugando</button>
+      <button class="mbtn x" onclick="confirmExit()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- END -->
+<div id="end">
+  <div class="ecard">
+    <div class="etitle" id="etitle">¡Tiempo!</div>
+    <p id="esub" style="color:var(--text2);margin-bottom:4px;font-size:14px;"></p>
+    <div class="estats">
+      <div class="estat"><div class="v c" id="ec">0</div><div class="l">Correctas</div></div>
+      <div class="estat"><div class="v w" id="ew">0</div><div class="l">Incorrectas</div></div>
+      <div class="estat"><div class="v s" id="es">0</div><div class="l">Pasadas</div></div>
+    </div>
+    <div id="emissed" style="font-size:12px;color:var(--text2);line-height:1.9;"></div>
+  </div>
+  <button class="rebtn" onclick="resetGame()">🔄 VOLVER A JUGAR</button>
+</div>
+
+<script>
+const BANCO=[
+  {l:'A',t:'Empieza con A',p:'Capital de la Argentina',r:'buenos aires'},
+  {l:'A',t:'Empieza con A',p:'Fruta roja que simbolizó la tentación en el Edén',r:'manzana'},
+  {l:'A',t:'Empieza con A',p:'Animal volador que sale de noche y usa ecolocalización',r:'murcielago'},
+  {l:'B',t:'Empieza con B',p:'Mamífero marino más grande del planeta',r:'ballena'},
+  {l:'B',t:'Empieza con B',p:'Deporte donde se encesta una pelota naranja en un aro',r:'basquet'},
+  {l:'C',t:'Empieza con C',p:'Animal herbívoro con joroba que vive en el desierto',r:'camello'},
+  {l:'C',t:'Empieza con C',p:'Color que resulta de mezclar azul y rojo',r:'celeste',skip:1,real:{l:'C',t:'Empieza con C',p:'Animal herbívoro con joroba que vive en el desierto',r:'camello'}},
+  {l:'D',t:'Empieza con D',p:'Reptil prehistórico extinto hace millones de años',r:'dinosaurio'},
+  {l:'D',t:'Empieza con D',p:'Número que en inglés se dice "two"',r:'dos'},
+  {l:'E',t:'Empieza con E',p:'Animal más grande que existe en tierra firme',r:'elefante'},
+  {l:'E',t:'Empieza con E',p:'Animal con el cuerpo cubierto de púas',r:'erizo'},
+  {l:'F',t:'Empieza con F',p:'Deporte más popular del mundo',r:'futbol'},
+  {l:'F',t:'Empieza con F',p:'Parte de la planta que atrae a los insectos polinizadores',r:'flor'},
+  {l:'G',t:'Empieza con G',p:'Instrumento de cuerda que se toca con los dedos',r:'guitarra'},
+  {l:'G',t:'Empieza con G',p:'Primate grande y poderoso de la selva africana',r:'gorila'},
+  {l:'H',t:'Empieza con H',p:'Lugar donde se hospedan los turistas',r:'hotel'},
+  {l:'I',t:'Empieza con I',p:'País europeo en forma de bota',r:'italia'},
+  {l:'J',t:'Empieza con J',p:'Animal salvaje manchado de la selva americana',r:'jaguar'},
+  {l:'J',t:'Empieza con J',p:'Arte marcial que nació en Japón',r:'judo'},
+  {l:'L',t:'Empieza con L',p:'Felino africano apodado el rey de la selva',r:'leon'},
+  {l:'L',t:'Empieza con L',p:'Satélite natural de la Tierra',r:'luna'},
+  {l:'M',t:'Empieza con M',p:'Primate más parecido al ser humano',r:'mono'},
+  {l:'M',t:'Empieza con M',p:'Instrumento de percusión de teclas de madera',r:'marimba'},
+  {l:'N',t:'Empieza con N',p:'Período de oscuridad entre dos días',r:'noche'},
+  {l:'O',t:'Empieza con O',p:'Molusco marino del que se obtienen perlas',r:'ostra'},
+  {l:'P',t:'Empieza con P',p:'Ave que no puede volar y vive en zonas frías',r:'pinguino'},
+  {l:'R',t:'Empieza con R',p:'Animal anfibio que salta y croá',r:'rana'},
+  {l:'R',t:'Empieza con R',p:'Roedor con cola larga y pelada',r:'rata'},
+  {l:'S',t:'Empieza con S',p:'Astro que nos da luz y calor cada día',r:'sol'},
+  {l:'T',t:'Empieza con T',p:'Instrumento de viento de metal del jazz',r:'trompeta'},
+  {l:'T',t:'Empieza con T',p:'Depredador felino rayado de Asia',r:'tigre'},
+  {l:'U',t:'Empieza con U',p:'Ropa que identifica a empleados o estudiantes',r:'uniforme'},
+  {l:'V',t:'Empieza con V',p:'Animal de granja que da leche',r:'vaca'},
+  {l:'V',t:'Empieza con V',p:'Ser mítico que chupa sangre por la noche',r:'vampiro'},
+  {l:'Z',t:'Empieza con Z',p:'Lugar donde se cuidan y exhiben animales del mundo',r:'zoologico'},
+];
+const LETRAS=['A','B','C','D','E','F','G','H','I','J','L','M','N','O','P','R','S','T','U','V','Z'];
+
+let totalTime=120,timeLeft=120,timerInt=null;
+let curIdx=0,cellSt={},scores={c:0,w:0,s:0};
+let questions=[],running=false,proc=false;
+let rec=null,listening=false;
+const syn=window.speechSynthesis;
+
+function selT(s,btn){
+  totalTime=s;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ctinput').value='';
+}
+function selTC(v){
+  const s=parseInt(v);
+  if(s>=30&&s<=600){totalTime=s;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));}
+}
+
+function buildQ(){
+  const q=[];
+  for(const ltr of LETRAS){
+    let cands=BANCO.filter(x=>x.l===ltr);
+    if(!cands.length) continue;
+    let ch=cands[Math.floor(Math.random()*cands.length)];
+    while(ch.skip&&ch.real) ch=ch.real;
+    q.push({letra:ch.l,tipo:ch.t,pregunta:ch.p,resp:norm(ch.r)});
+  }
+  return q;
+}
+
+function norm(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
+}
+
+function buildRosco(){
+  const svg=document.getElementById('rsvg');
+  svg.innerHTML='';
+  const cx=210,cy=210,r=175,rc=22,n=LETRAS.length;
+  LETRAS.forEach((ltr,i)=>{
+    const a=(2*Math.PI*i/n)-Math.PI/2;
+    const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.className.baseVal='c-def'; g.id='c-'+ltr;
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',rc);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x);t.setAttribute('y',y+1);
+    t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('font-family',"'Bebas Neue',sans-serif");t.setAttribute('font-size','14');
+    t.textContent=ltr;
+    g.appendChild(c);g.appendChild(t);svg.appendChild(g);
+    cellSt[ltr]='def';
+  });
+}
+
+function setCell(ltr,st){
+  const g=document.getElementById('c-'+ltr);
+  if(g){g.className.baseVal='c-'+st;cellSt[ltr]=st;}
+}
+
+function fmt(s){return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
+
+function startTimer(){
+  timeLeft=totalTime;
+  const d=document.getElementById('tdisp'),f=document.getElementById('pfill');
+  d.classList.remove('warn');
+  f.style.transition='none';f.style.width='100%';
+  setTimeout(()=>f.style.transition='width 1s linear',50);
+  timerInt=setInterval(()=>{
+    timeLeft--;
+    d.textContent=fmt(timeLeft);
+    f.style.width=(timeLeft/totalTime*100)+'%';
+    if(timeLeft<=10) d.classList.add('warn');
+    if(timeLeft<=0) endGame('tiempo');
+  },1000);
+}
+
+function speak(txt,cb){
+  if(!syn){cb&&cb();return;}
+  syn.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='es-AR';u.rate=1.1;u.pitch=1;
+  const vv=syn.getVoices(), v=vv.find(x=>x.lang.startsWith('es'))||vv[0];
+  if(v) u.voice=v;
+  u.onend=()=>cb&&cb();u.onerror=()=>cb&&cb();
+  syn.speak(u);
+}
+
+function setupRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    document.getElementById('micbtn').classList.add('nosup');
+    document.getElementById('vhint').textContent='Tu navegador no soporta voz. Usá el campo de texto.';
+    return;
+  }
+  rec=new SR();rec.lang='es-AR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=3;
+  rec.onresult=e=>{
+    let inter='',fin='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal) fin+=t; else inter+=t;
+    }
+    const heard=(fin||inter).trim();
+    if(heard){
+      const b=document.getElementById('tbox');
+      b.textContent=heard;b.classList.add('heard');
+      if(fin) processAns(fin.trim());
+    }
+  };
+  rec.onend=()=>{listening=false;document.getElementById('micbtn').classList.remove('on');};
+  rec.onerror=()=>{listening=false;document.getElementById('micbtn').classList.remove('on');};
+}
+
+function startListen(){
+  if(!rec||listening||!running) return;
+  document.getElementById('tbox').textContent='Escuchando...';
+  document.getElementById('tbox').classList.remove('heard');
+  try{rec.start();listening=true;document.getElementById('micbtn').classList.add('on');}catch(e){}
+}
+function stopListen(){
+  if(!rec||!listening) return;
+  try{rec.stop();}catch(e){}
+  listening=false;document.getElementById('micbtn').classList.remove('on');
+}
+
+function toggleMic(){
+  if(!rec||!running) return;
+  if(listening) stopListen(); else startListen();
+}
+
+function startGame(){
+  questions=buildQ();curIdx=0;scores={c:0,w:0,s:0};
+  updScore();
+  document.getElementById('setup').style.display='none';
+  document.getElementById('end').style.display='none';
+  document.getElementById('game').style.display='flex';
+  buildRosco();setupRec();running=true;startTimer();
+  showQ(0);
+}
+
+function showQ(idx){
+  if(idx>=questions.length){endGame('completo');return;}
+  const q=questions[idx];
+  setCell(q.letra,'act');
+  document.getElementById('clueltr').textContent=q.letra;
+  document.getElementById('cluetype').textContent=q.tipo;
+  document.getElementById('cluetext').textContent=q.pregunta;
+  document.getElementById('fbmsg').textContent='';
+  document.getElementById('fbmsg').className='fbmsg';
+  document.getElementById('tbox').textContent='Presioná 🎙 y hablá...';
+  document.getElementById('tbox').classList.remove('heard');
+  document.getElementById('minput').value='';
+  proc=false;
+  // Leer pista y luego abrir mic automáticamente
+  speak(q.tipo+'. '+q.pregunta, ()=>{ if(running&&!proc) startListen(); });
+}
+
+function processAns(raw){
+  if(proc||!running) return;
+  const ans=norm(raw);
+  if(!ans) return;
+  stopListen();
+  if(ans.includes('pasapalabra')||ans==='pasar'||ans==='paso'||ans==='siguiente'||ans==='pasa'){
+    skipLetter();return;
+  }
+  const q=questions[curIdx];
+  const isOk=ans===q.resp||lev(ans,q.resp)<=1;
+  proc=true;
+  const fb=document.getElementById('fbmsg');
+  if(isOk){
+    scores.c++;setCell(q.letra,'ok');
+    fb.textContent=`✓ ¡Correcto! "${q.resp}"`;fb.className='fbmsg ok';
+    updScore();
+    speak('Correcto',()=>setTimeout(nextQ,250));
+  } else {
+    scores.w++;setCell(q.letra,'no');
+    fb.textContent=`✗ Era: "${q.resp}"`;fb.className='fbmsg no';
+    updScore();
+    speak('Incorrecto. Era '+q.resp,()=>setTimeout(nextQ,250));
+  }
+}
+
+function submitM(){
+  const v=document.getElementById('minput').value.trim();
+  if(!v||!running) return;
+  processAns(v);
+}
+
+function skipLetter(){
+  if(!running||proc) return;
+  proc=true;stopListen();
+  const q=questions[curIdx];
+  scores.s++;setCell(q.letra,'sk');
+  const fb=document.getElementById('fbmsg');
+  fb.textContent='↩ Pasapalabra';fb.className='fbmsg pp';
+  updScore();
+  speak('Pasapalabra',()=>setTimeout(nextQ,150));
+}
+
+function nextQ(){
+  curIdx++;
+  if(curIdx>=questions.length) endGame('completo'); else showQ(curIdx);
+}
+
+function updScore(){
+  document.getElementById('sc').textContent=scores.c;
+  document.getElementById('sw').textContent=scores.w;
+  document.getElementById('ss').textContent=scores.s;
+}
+
+// EXIT
+function askExit(){
+  syn&&syn.cancel();stopListen();
+  document.getElementById('exitmodal').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('exitmodal').classList.remove('show');
+  if(running&&!proc) startListen();
+}
+function confirmExit(){
+  document.getElementById('exitmodal').classList.remove('show');
+  endGame('salida');
+}
+
+// END
+function endGame(reason){
+  running=false;clearInterval(timerInt);
+  stopListen();syn&&syn.cancel();
+  document.getElementById('game').style.display='none';
+  document.getElementById('ec').textContent=scores.c;
+  document.getElementById('ew').textContent=scores.w;
+  document.getElementById('es').textContent=scores.s;
+  let title='¡Tiempo!',sub='';
+  if(reason==='completo'){title=scores.w===0?'¡ROSCO PERFECTO!':'¡Rosco completado!';sub=`Respondiste las ${questions.length} letras`;}
+  else if(reason==='salida'){title='Partida terminada';sub='Saliste del juego';}
+  else{sub='Se acabó el tiempo';}
+  const missed=questions.filter(q=>cellSt[q.letra]==='no'||cellSt[q.letra]==='sk'||cellSt[q.letra]==='act'||cellSt[q.letra]==='def');
+  const me=document.getElementById('emissed');
+  if(missed.length&&missed.length<=12)
+    me.innerHTML='Sin resolver: '+missed.map(q=>`<span style="color:var(--text2)">${q.letra}</span> → <strong>${q.resp}</strong>`).join(' · ');
+  else me.textContent='';
+  document.getElementById('etitle').textContent=title;
+  document.getElementById('etitle').style.color=(reason==='completo'&&scores.w===0)?'var(--gold)':'var(--text)';
+  document.getElementById('esub').textContent=sub;
+  document.getElementById('end').style.display='flex';
+  speak(reason==='completo'&&scores.w===0?'¡Rosco perfecto! ¡Increíble!':
+    `Fin del juego. Acertaste ${scores.c} de ${questions.length}.`);
+}
+
+function resetGame(){
+  document.getElementById('end').style.display='none';
+  document.getElementById('setup').style.display='flex';
+  cellSt={};
+}
+
+function lev(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+if(syn){syn.onvoiceschanged=()=>syn.getVoices();syn.getVoices();}
+</script>
+</body>
+</html>
