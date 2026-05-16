@@ -1,545 +1,474 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pasapalabra - Edición Desafío</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  :root {
-    --bg:#0a0e1a; --surface:#111827; --surface2:#1c2535;
-    --gold:#f5c518; --gold2:#e6a800; --blue:#2563eb;
-    --green:#22c55e; --red:#ef4444; --gray:#6b7280;
-    --text:#f1f5f9; --text2:#94a3b8; --radius:16px;
-  }
-  body { background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; overflow-x: hidden; }
-  .font-bebas { font-family: 'Bebas Neue', sans-serif; }
-  
-  .rosco-wrap { position: relative; width: min(420px, 85vw); height: min(420px, 85vw); margin: 0 auto; }
-  #rsvg { width: 100%; height: 100%; }
-  
-  .c-def circle { fill: #1c2535; stroke: #3a4a66; stroke-width: 2; transition: all 0.3s; }
-  .c-def text { fill: #f1f5f9; font-size: 14px; font-weight: bold; pointer-events: none; }
-  .c-act circle { fill: #1a2a50; stroke: var(--gold); stroke-width: 4; filter: drop-shadow(0 0 8px rgba(245,197,24,0.6)); }
-  .c-act text { fill: var(--gold); }
-  .c-ok circle { fill: #14532d; stroke: var(--green); stroke-width: 3; }
-  .c-ok text { fill: #86efac; }
-  .c-no circle { fill: #450a0a; stroke: var(--red); stroke-width: 3; }
-  .c-no text { fill: #fca5a5; }
-  .c-sk circle { fill: #2a2000; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 4; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasapalabra - Audio Visualizer Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0a0e1a; --surface: #111827; --surface2: #1c2535;
+            --gold: #f5c518; --gold2: #e6a800; --blue: #2563eb;
+            --green: #22c55e; --red: #ef4444; --text: #f1f5f9;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; overflow-x: hidden; }
+        .font-bebas { font-family: 'Bebas Neue', sans-serif; }
 
-  .btn-select { background: var(--surface2); border: 2px solid #2a3448; transition: all 0.2s; }
-  .btn-select.active { border-color: var(--gold); background: rgba(245,197,24,0.1); color: var(--gold); }
-  
-  .diff-easy { color: #22c55e; }
-  .diff-medium { color: #2563eb; }
-  .diff-hard { color: #f59e0b; }
-  .diff-impossible { color: #ef4444; }
+        /* --- MIC ANIMATION --- */
+        .mic-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+        .mic-wave {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(245, 197, 24, 0.2);
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+        }
+        .mic-btn {
+            position: relative;
+            z-index: 10;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 4px solid var(--gold);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mic-btn.active {
+            background: var(--gold);
+            color: black;
+            box-shadow: 0 0 20px var(--gold);
+        }
 
-  .custom-scroll::-webkit-scrollbar { width: 6px; }
-  .custom-scroll::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 10px; }
-  
-  @keyframes pulse-gold { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-  .listening { animation: pulse-gold 0.8s infinite; color: var(--gold); }
-</style>
+        /* --- ROSCO STYLES --- */
+        .rosco-wrap { position: relative; width: min(380px, 85vw); height: min(380px, 85vw); margin: 0 auto; }
+        .c-def circle { fill: #1c2535; stroke: #3a4a66; stroke-width: 2; }
+        .c-def text { fill: #f1f5f9; font-size: 13px; font-weight: bold; pointer-events: none; }
+        .c-act circle { fill: #1a2a50; stroke: var(--gold); stroke-width: 4; filter: drop-shadow(0 0 8px var(--gold)); }
+        .c-ok circle { fill: #14532d; stroke: var(--green); stroke-width: 3; }
+        .c-no circle { fill: #450a0a; stroke: var(--red); stroke-width: 3; }
+        .c-sk circle { fill: #2a2000; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 4; }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 10px; }
+    </style>
 </head>
 <body class="p-4 flex flex-col items-center min-h-screen">
 
-  <header class="text-center mb-6">
-    <h1 class="font-bebas text-5xl md:text-7xl text-[#f5c518] tracking-widest drop-shadow-lg">PASAPALABRA</h1>
-    <p class="text-xs uppercase tracking-[0.3em] text-slate-500 font-bold">Selector de Dificultad</p>
-  </header>
+    <header class="text-center mb-6">
+        <h1 class="font-bebas text-6xl text-[#f5c518] tracking-widest drop-shadow-lg">PASAPALABRA</h1>
+        <p class="text-xs uppercase tracking-[0.3em] text-slate-500 font-bold">Edición Voz & Ondas</p>
+    </header>
 
-  <!-- SETUP SCREEN -->
-  <div id="setup" class="w-full max-w-lg space-y-4">
-    <div class="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6">
-      
-      <div>
-        <h2 class="text-[#f5c518] font-bold text-sm uppercase mb-3 tracking-wider">🌟 Seleccionar Dificultad</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button onclick="setDifficulty('easy', this)" class="btn-select active p-3 rounded-xl text-xs font-black">FÁCIL</button>
-          <button onclick="setDifficulty('medium', this)" class="btn-select p-3 rounded-xl text-xs font-black">MEDIO</button>
-          <button onclick="setDifficulty('hard', this)" class="btn-select p-3 rounded-xl text-xs font-black">DIFÍCIL</button>
-          <button onclick="setDifficulty('impossible', this)" class="btn-select p-3 rounded-xl text-xs font-black">EXTREMO</button>
+    <!-- SETUP SCREEN -->
+    <div id="setup" class="w-full max-w-md space-y-4">
+        <div class="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6">
+            <div>
+                <h2 class="text-[#f5c518] font-bold text-sm uppercase mb-3 tracking-wider">🌟 Dificultad</h2>
+                <div class="grid grid-cols-2 gap-2" id="diff-btns">
+                    <button onclick="setDiff('easy', this)" class="bg-slate-800 p-3 rounded-xl text-xs font-black border-2 border-transparent active-btn transition-all">FÁCIL</button>
+                    <button onclick="setDiff('medium', this)" class="bg-slate-800 p-3 rounded-xl text-xs font-black border-2 border-transparent">MEDIO</button>
+                    <button onclick="setDiff('hard', this)" class="bg-slate-800 p-3 rounded-xl text-xs font-black border-2 border-transparent">DIFÍCIL</button>
+                    <button onclick="setDiff('impossible', this)" class="bg-slate-800 p-3 rounded-xl text-xs font-black border-2 border-transparent">IMPOSIBLE</button>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-[#f5c518] font-bold text-sm uppercase mb-3 tracking-wider">⏱ Tiempo</h2>
+                <div class="flex gap-2">
+                    <input type="number" id="time-input" value="120" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-center font-bold outline-none focus:border-gold">
+                    <span class="flex items-center text-slate-500 font-bold">SEG</span>
+                </div>
+            </div>
         </div>
-        <p id="diff-desc" class="text-[11px] text-slate-400 mt-2 italic text-center">Palabras simples y mucho tiempo para pensar.</p>
-      </div>
-
-      <div>
-        <h2 class="text-[#f5c518] font-bold text-sm uppercase mb-3 tracking-wider">⏱ Configurar Tiempo</h2>
-        <div class="grid grid-cols-4 gap-2 mb-3">
-          <button onclick="setGameTime(60, this)" class="btn-select p-2 rounded-lg text-xs font-bold">1 Min</button>
-          <button onclick="setGameTime(120, this)" class="btn-select active p-2 rounded-lg text-xs font-bold">2 Min</button>
-          <button onclick="setGameTime(180, this)" class="btn-select p-2 rounded-lg text-xs font-bold">3 Min</button>
-          <button onclick="setGameTime(300, this)" class="btn-select p-2 rounded-lg text-xs font-bold">5 Min</button>
-        </div>
-        <div class="flex items-center gap-3 bg-[#0a0e1a] p-3 rounded-xl border border-slate-800">
-          <label class="text-[10px] uppercase font-bold text-slate-500">Personalizado (seg):</label>
-          <input type="number" id="custom-time" placeholder="Ej: 90" class="bg-transparent text-white font-bold outline-none w-20" oninput="setCustomTime(this.value)">
-        </div>
-      </div>
+        <button onclick="startGame()" class="w-full bg-[#f5c518] text-black font-bebas text-3xl py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+            ¡EMPEZAR EL ROSCO!
+        </button>
     </div>
 
-    <button onclick="initGame()" class="w-full bg-[#f5c518] text-black font-bebas text-3xl py-4 rounded-2xl shadow-[0_0_20px_rgba(245,197,24,0.3)] hover:scale-[1.02] active:scale-95 transition-all">
-      ¡EMPEZAR ROSCO!
-    </button>
-  </div>
-
-  <!-- GAME SCREEN -->
-  <div id="game" class="hidden w-full max-w-4xl flex-col items-center gap-4">
-    <div class="w-full bg-[#111827] border border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
-      <div id="timer" class="font-bebas text-4xl text-[#f5c518] w-24 text-center">2:00</div>
-      
-      <div class="flex-1 min-w-[150px] h-3 bg-slate-800 rounded-full overflow-hidden">
-        <div id="progress-bar" class="h-full bg-[#f5c518] transition-all duration-1000" style="width: 100%"></div>
-      </div>
-
-      <div class="flex gap-2">
-        <div class="bg-green-500/10 border border-green-500/30 text-green-500 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1">✓ <span id="sc-ok">0</span></div>
-        <div class="bg-red-500/10 border border-red-500/30 text-red-500 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1">✗ <span id="sc-no">0</span></div>
-        <div class="bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1">↩ <span id="sc-sk">0</span></div>
-      </div>
-
-      <button onclick="askExit()" class="bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all">
-        Salir
-      </button>
-    </div>
-
-    <div class="rosco-wrap">
-      <svg id="rsvg" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg"></svg>
-    </div>
-
-    <div class="w-full max-w-2xl bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
-      <div class="flex items-baseline gap-3 mb-2">
-        <span id="letter-label" class="font-bebas text-5xl text-[#f5c518]">A</span>
-        <span id="clue-type" class="text-[10px] uppercase font-black text-white tracking-wider bg-blue-600 px-2 py-1 rounded">Cargando...</span>
-      </div>
-      <p id="clue-text" class="text-xl font-bold leading-relaxed min-h-[3em] text-slate-200">Preparando rosco...</p>
-    </div>
-
-    <div class="w-full max-w-2xl space-y-3">
-      <div id="speech-box" class="bg-[#1c2535] border border-slate-700 p-4 rounded-xl text-center italic text-slate-400 min-h-[60px] flex items-center justify-center">
-        Esperando respuesta...
-      </div>
-      <div id="fb-msg" class="text-center font-bold text-lg h-6"></div>
-      
-      <div class="flex gap-2">
-        <input type="text" id="manual-in" placeholder="Escribí aquí..." class="flex-1 bg-[#1c2535] border border-slate-700 p-3 rounded-xl outline-none focus:border-[#f5c518] font-bold text-center" onkeydown="if(event.key==='Enter') manualSubmit()">
-        <button onclick="manualSubmit()" class="bg-blue-600 px-6 rounded-xl font-bold hover:bg-blue-500 transition-colors">ENVIAR</button>
-        <button onclick="btnPasapalabra()" class="bg-slate-700 px-4 rounded-xl font-bold uppercase text-xs hover:bg-slate-600 transition-colors">Pasar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESULTS SCREEN -->
-  <div id="results" class="hidden w-full max-w-2xl space-y-6">
-    <div class="bg-[#111827] border border-slate-800 p-8 rounded-3xl shadow-2xl text-center">
-      <h2 id="res-title" class="font-bebas text-6xl text-[#f5c518] mb-6">RESULTADOS</h2>
-      
-      <div class="grid grid-cols-3 gap-3 mb-8">
-        <div class="bg-[#1c2535] p-4 rounded-2xl border border-green-500/20">
-          <div id="res-ok" class="font-bebas text-5xl text-green-500">0</div>
-          <div class="text-[10px] font-bold text-slate-500 uppercase">Aciertos</div>
+    <!-- GAME SCREEN -->
+    <div id="game" class="hidden w-full max-w-4xl flex-col items-center gap-4">
+        <div class="w-full bg-[#111827] border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-xl">
+            <div id="timer" class="font-bebas text-4xl text-[#f5c518] w-24">2:00</div>
+            <div class="flex gap-4">
+                <div class="text-green-500 font-bold">✓ <span id="sc-ok">0</span></div>
+                <div class="text-red-500 font-bold">✗ <span id="sc-no">0</span></div>
+            </div>
+            <button onclick="location.reload()" class="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase">Salir</button>
         </div>
-        <div class="bg-[#1c2535] p-4 rounded-2xl border border-red-500/20">
-          <div id="res-no" class="font-bebas text-5xl text-red-500">0</div>
-          <div class="text-[10px] font-bold text-slate-500 uppercase">Errores</div>
-        </div>
-        <div class="bg-[#1c2535] p-4 rounded-2xl border border-yellow-500/20">
-          <div id="res-sk" class="font-bebas text-5xl text-yellow-500">0</div>
-          <div class="text-[10px] font-bold text-slate-500 uppercase">Salteadas</div>
-        </div>
-      </div>
 
-      <h3 class="text-left font-bold text-sm text-[#f5c518] uppercase mb-3 border-b border-slate-800 pb-2">Revisión del Rosco</h3>
-      <div id="review-list" class="max-h-[350px] overflow-y-auto custom-scroll space-y-2 pr-2 mb-6"></div>
+        <div class="rosco-wrap">
+            <svg id="rsvg" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
 
-      <button onclick="location.reload()" class="w-full bg-[#f5c518] text-black font-bebas text-2xl py-3 rounded-xl hover:bg-[#e6a800]">
-        JUGAR OTRA VEZ
-      </button>
+        <div class="w-full max-w-xl bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
+            <div class="flex items-center gap-3 mb-2">
+                <span id="letter-label" class="font-bebas text-5xl text-[#f5c518]">A</span>
+                <span id="clue-type" class="text-[10px] uppercase font-black text-white px-2 py-1 rounded bg-blue-600">...</span>
+            </div>
+            <p id="clue-text" class="text-lg font-bold text-slate-200 min-h-[3em]">Preparando pista...</p>
+        </div>
+
+        <!-- VOICE AREA -->
+        <div class="w-full max-w-xl space-y-4">
+            <div class="mic-container">
+                <div id="mic-wave" class="mic-wave"></div>
+                <button id="mic-btn" onclick="toggleManualMic()" class="mic-btn">🎙</button>
+            </div>
+            
+            <div id="status-msg" class="text-center text-sm font-bold text-slate-500 italic">Esperando...</div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="manual-in" placeholder="Escribe aquí..." class="flex-1 bg-[#1c2535] border border-slate-700 p-3 rounded-xl outline-none focus:border-[#f5c518] font-bold text-center">
+                <button onclick="manualSubmit()" class="bg-blue-600 px-6 rounded-xl font-bold hover:bg-blue-500 transition-colors">ENVIAR</button>
+                <button onclick="btnPasapalabra()" class="bg-slate-700 px-4 rounded-xl font-bold uppercase text-xs">PASAR</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const DB_WORDS = {
-      'easy': {
-        'A': [{t:'Empieza con A', w:'abeja', h:'Insecto que produce miel y vive en colmenas.'}],
-        'B': [{t:'Empieza con B', w:'barco', h:'Vehículo grande que flota y navega por el agua.'}],
-        'C': [{t:'Empieza con C', w:'casa', h:'Construcción donde viven las personas.'}],
-        'D': [{t:'Empieza con D', w:'dedo', h:'Parte de la mano que usamos para señalar.'}],
-        'E': [{t:'Empieza con E', w:'elefante', h:'Animal terrestre muy grande con trompa larga.'}],
-        'F': [{t:'Empieza con F', w:'fuego', h:'Llamas que dan calor y pueden quemar.'}],
-        'G': [{t:'Empieza con G', w:'gato', h:'Animal doméstico que maúlla y caza ratones.'}],
-        'H': [{t:'Empieza con H', w:'huevo', h:'Lo que ponen las gallinas para tener pollitos.'}],
-        'I': [{t:'Empieza con I', w:'isla', h:'Tierra rodeada de agua por todas partes.'}],
-        'J': [{t:'Empieza con J', w:'jardin', h:'Lugar de la casa con flores y plantas.'}],
-        'L': [{t:'Empieza con L', w:'luna', h:'Satélite que brilla en el cielo de noche.'}],
-        'M': [{t:'Empieza con M', w:'manzana', h:'Fruta redonda que puede ser roja o verde.'}],
-        'N': [{t:'Empieza con N', w:'nube', h:'Masa blanca en el cielo formada por agua.'}],
-        'O': [{t:'Empieza con O', w:'oreja', h:'Parte del cuerpo que usamos para oír.'}],
-        'P': [{t:'Empieza con P', w:'perro', h:'El mejor amigo del hombre, animal que ladra.'}],
-        'R': [{t:'Empieza con R', w:'raton', h:'Animalito pequeño al que le gusta el queso.'}],
-        'S': [{t:'Empieza con S', w:'sol', h:'Estrella que nos da luz y calor de día.'}],
-        'T': [{t:'Empieza con T', w:'tenedor', h:'Utensilio con pinchos para comer comida sólida.'}],
-        'U': [{t:'Empieza con U', w:'uvas', h:'Frutas pequeñas que vienen en racimos.'}],
-        'V': [{t:'Empieza con V', w:'vaca', h:'Animal de granja que nos da leche.'}],
-        'Z': [{t:'Contiene la Z', w:'azul', h:'El color del cielo en un día despejado.'}]
-      },
-      'medium': {
-        'A': [{t:'Empieza con A', w:'astronauta', h:'Persona que viaja al espacio exterior.'}],
-        'B': [{t:'Contiene la B', w:'arbol', h:'Planta con tronco de madera y ramas.'}],
-        'C': [{t:'Empieza con C', w:'camaleon', h:'Reptil que cambia de color para camuflarse.'}],
-        'D': [{t:'Contiene la D', w:'helado', h:'Postre muy frío que se come en verano.'}],
-        'E': [{t:'Empieza con E', w:'espejo', h:'Objeto donde ves tu reflejo.'}],
-        'F': [{t:'Empieza con F', w:'fantasma', h:'Espíritu de una persona muerta.'}],
-        'G': [{t:'Contiene la G', w:'juego', h:'Actividad para divertirse con reglas.'}],
-        'H': [{t:'Empieza con H', w:'hormiga', h:'Insecto muy trabajador que vive bajo tierra.'}],
-        'I': [{t:'Empieza con I', w:'iman', h:'Objeto que atrae metales como el hierro.'}],
-        'J': [{t:'Contiene la J', w:'reloj', h:'Aparato para medir el tiempo.'}],
-        'L': [{t:'Empieza con L', w:'linterna', h:'Objeto portátil que sirve para dar luz.'}],
-        'M': [{t:'Empieza con M', w:'martillo', h:'Herramienta para clavar clavos.'}],
-        'N': [{t:'Contiene la N', w:'pantalon', h:'Prenda de vestir que cubre las piernas.'}],
-        'O': [{t:'Empieza con O', w:'oceano', h:'Gran masa de agua salada que cubre la Tierra.'}],
-        'P': [{t:'Empieza con P', w:'puente', h:'Construcción para pasar sobre un río.'}],
-        'R': [{t:'Contiene la R', w:'carro', h:'Vehículo de cuatro ruedas.'}],
-        'S': [{t:'Empieza con S', w:'serpiente', h:'Reptil largo que se arrastra por el suelo.'}],
-        'T': [{t:'Empieza con T', w:'tesoro', h:'Cosas valiosas como oro escondidas.'}],
-        'U': [{t:'Contiene la U', w:'luz', h:'Lo que emite una lámpara.'}],
-        'V': [{t:'Empieza con V', w:'ventana', h:'Abertura en la pared para ver afuera.'}],
-        'Z': [{t:'Empieza con Z', w:'zorro', h:'Animal astuto con cola peluda.'}]
-      },
-      'hard': {
-        'A': [{t:'Empieza con A', w:'acertijo', h:'Frase o pregunta con respuesta difícil de hallar.'}],
-        'B': [{t:'Contiene la B', w:'escribir', h:'Representar ideas mediante letras.'}],
-        'C': [{t:'Empieza con C', w:'crepusculo', h:'Claridad que hay antes de salir el sol o después de ponerse.'}],
-        'D': [{t:'Empieza con D', w:'desenlace', h:'Final o conclusión de una historia.'}],
-        'E': [{t:'Contiene la E', w:'planeta', h:'Cuerpo celeste que gira alrededor de una estrella.'}],
-        'F': [{t:'Empieza con F', w:'fosforo', h:'Palito de madera para encender fuego.'}],
-        'G': [{t:'Empieza con G', w:'galaxia', h:'Conjunto enorme de estrellas y planetas.'}],
-        'H': [{t:'Contiene la H', w:'zanahoria', h:'Hortaliza naranja de raíz comestible.'}],
-        'I': [{t:'Empieza con I', w:'itinerario', h:'Ruta o plan de un viaje.'}],
-        'J': [{t:'Empieza con J', w:'jeroglifico', h:'Escritura antigua con símbolos y dibujos.'}],
-        'L': [{t:'Contiene la L', w:'eclipse', h:'Cuando un astro oculta a otro.'}],
-        'M': [{t:'Empieza con M', w:'metamorfosis', h:'Cambio de forma de algunos animales.'}],
-        'N': [{t:'Empieza con N', w:'nostalgia', h:'Sentimiento de tristeza por el pasado.'}],
-        'O': [{t:'Contiene la O', w:'bosque', h:'Lugar con mucha vegetación y árboles.'}],
-        'P': [{t:'Empieza con P', w:'perpendicular', h:'Línea que forma un ángulo recto con otra.'}],
-        'R': [{t:'Empieza con R', w:'relampago', h:'Resplandor fugaz en una tormenta.'}],
-        'S': [{t:'Contiene la S', w:'paisaje', h:'Extensión de terreno que se ve desde un sitio.'}],
-        'T': [{t:'Empieza con T', w:'telescopio', h:'Aparato para ver objetos muy lejanos.'}],
-        'U': [{t:'Empieza con U', w:'universo', h:'Todo lo que existe físicamente.'}],
-        'V': [{t:'Contiene la V', w:'selva', h:'Terreno extenso y virgen con mucha flora.'}],
-        'Z': [{t:'Empieza con Z', w:'zigzag', h:'Línea con ángulos cerrados en direcciones opuestas.'}]
-      },
-      'impossible': {
-        'A': [{t:'Empieza con A', w:'anacoluto', h:'Inconsecuencia en la construcción de una frase.'}],
-        'B': [{t:'Contiene la B', w:'epigrafe', h:'Cita que ilustra la idea general de un libro.'}],
-        'C': [{t:'Empieza con C', w:'clepsidra', h:'Reloj antiguo que mide el tiempo con agua.'}],
-        'D': [{t:'Empieza con D', w:'diacronico', h:'Que sucede a través del tiempo.'}],
-        'E': [{t:'Empieza con E', w:'efervescente', h:'Que desprende burbujas de gas.'}],
-        'F': [{t:'Empieza con F', w:'filantropo', h:'Persona que ayuda a los demás desinteresadamente.'}],
-        'G': [{t:'Contiene la G', w:'paradigmatico', h:'Que sirve de ejemplo o modelo.'}],
-        'H': [{t:'Empieza con H', w:'holistico', h:'Que considera el sistema como un todo.'}],
-        'I': [{t:'Empieza con I', w:'idiosincrasia', h:'Rasgos distintivos de un individuo o grupo.'}],
-        'J': [{t:'Contiene la J', w:'adyacente', h:'Que está situado al lado de otra cosa.'}],
-        'L': [{t:'Empieza con L', w:'lexicografia', h:'Técnica de componer diccionarios.'}],
-        'M': [{t:'Empieza con M', w:'mnemotecnia', h:'Técnica para facilitar la memoria.'}],
-        'N': [{t:'Contiene la N', w:'intringulis', h:'Dificultad o complicación oculta de algo.'}],
-        'O': [{t:'Empieza con O', w:'onirico', h:'Relacionado con el mundo de los sueños.'}],
-        'P': [{t:'Empieza con P', w:'procrastinar', h:'Diferir o aplazar una tarea.'}],
-        'R': [{t:'Contiene la R', w:'oximoron', h:'Figura que combina dos conceptos opuestos.'}],
-        'S': [{t:'Empieza con S', w:'sinestesia', h:'Mezcla de sensaciones de sentidos distintos.'}],
-        'T': [{t:'Empieza con T', w:'tautologia', h:'Repetición innecesaria de un pensamiento.'}],
-        'U': [{t:'Contiene la U', w:'consuetudinario', h:'Que es de costumbre o tradicional.'}],
-        'V': [{t:'Empieza con V', w:'vituperar', h:'Criticar a alguien con mucha dureza.'}],
-        'Z': [{t:'Contiene la Z', w:'estoicismo', h:'Fortaleza ante la adversidad.'}]
-      }
-    };
+    <!-- RESULTS SCREEN -->
+    <div id="results" class="hidden w-full max-w-2xl">
+        <div class="bg-[#111827] border border-slate-800 p-8 rounded-3xl text-center space-y-6">
+            <h2 id="res-title" class="font-bebas text-6xl text-[#f5c518]">FINAL</h2>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-slate-900 p-4 rounded-xl"><div id="res-ok" class="text-3xl font-bold text-green-500">0</div><div class="text-[10px]">OK</div></div>
+                <div class="bg-slate-900 p-4 rounded-xl"><div id="res-no" class="text-3xl font-bold text-red-500">0</div><div class="text-[10px]">ERROR</div></div>
+                <div id="res-sk-box" class="bg-slate-900 p-4 rounded-xl"><div id="res-sk" class="text-3xl font-bold text-yellow-500">0</div><div class="text-[10px]">PASADAS</div></div>
+            </div>
+            <div id="review-list" class="text-left space-y-2 max-h-60 overflow-y-auto custom-scroll p-2 bg-black/20 rounded-xl">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <button onclick="location.reload()" class="w-full bg-[#f5c518] text-black font-bebas text-3xl py-4 rounded-2xl">VOLVER A JUGAR</button>
+        </div>
+    </div>
 
-    let gameDuration = 120, timeLeft = 120, timer = null;
-    let difficulty = 'easy';
-    let currentRosco = [], currentIndex = 0, cellStates = {}, running = false, processing = false;
-    let recognition = null, listening = false;
-
-    function setDifficulty(lvl, btn) {
-      difficulty = lvl;
-      document.querySelectorAll('#setup .btn-select').forEach(b => {
-          if (b.innerText === '1 MIN' || b.innerText === '2 MIN' || b.innerText === '3 MIN' || b.innerText === '5 MIN') return;
-          b.classList.remove('active');
-      });
-      btn.classList.add('active');
-      
-      const desc = document.getElementById('diff-desc');
-      if(lvl === 'easy') { desc.innerText = "Palabras simples y mucho tiempo para pensar."; gameDuration = 240; }
-      if(lvl === 'medium') { desc.innerText = "Palabras comunes. Desafío equilibrado."; gameDuration = 120; }
-      if(lvl === 'hard') { desc.innerText = "Términos literarios y abstractos. ¡Cuidado!"; gameDuration = 90; }
-      if(lvl === 'impossible') { desc.innerText = "Conceptos avanzados. Solo para expertos."; gameDuration = 60; }
-      
-      timeLeft = gameDuration;
-      updateTimerDisplay();
-    }
-
-    function setGameTime(s, btn) {
-      gameDuration = s;
-      document.querySelectorAll('#setup .btn-select').forEach(b => {
-          if (b.innerText.includes('MIN')) b.classList.remove('active');
-      });
-      btn.classList.add('active');
-      document.getElementById('custom-time').value = '';
-      timeLeft = gameDuration;
-      updateTimerDisplay();
-    }
-
-    function setCustomTime(val) {
-      if (val > 0) {
-        gameDuration = parseInt(val);
-        timeLeft = gameDuration;
-        updateTimerDisplay();
-      }
-    }
-
-    function updateTimerDisplay() {
-      const m = Math.floor(timeLeft / 60);
-      const s = timeLeft % 60;
-      const disp = document.getElementById('timer');
-      if(disp) disp.textContent = `${m}:${s < 10 ? '0'+s : s}`;
-    }
-
-    function normalize(text) {
-      return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
-    }
-
-    function buildRosco() {
-      const letters = Object.keys(DB_WORDS[difficulty]).sort();
-      currentRosco = letters.map(ltr => {
-        const options = DB_WORDS[difficulty][ltr];
-        const choice = options[Math.floor(Math.random() * options.length)];
-        return {
-          l: ltr,
-          type: choice.t,
-          hint: choice.h,
-          answer: choice.w
+    <script>
+        const DB = {
+            'easy': {
+                'A': [{t:'Empieza con A', w:'avion', h:'Vehículo que vuela por el aire.'}, {t:'Empieza con A', w:'abeja', h:'Insecto que hace miel.'}],
+                'B': [{t:'Empieza con B', w:'barco', h:'Vehículo que flota en el agua.'}, {t:'Empieza con B', w:'boca', h:'Parte de la cara para comer.'}],
+                'C': [{t:'Empieza con C', w:'casa', h:'Lugar donde vivimos.'}, {t:'Empieza con C', w:'cielo', h:'Lo que vemos arriba azul.'}],
+                'D': [{t:'Empieza con D', w:'diente', h:'Parte blanca de la boca.'}, {t:'Empieza con D', w:'dado', h:'Cubo con puntos para jugar.'}],
+                'E': [{t:'Empieza con E', w:'elefante', h:'Animal con trompa muy larga.'}, {t:'Empieza con E', w:'espejo', h:'Donde ves tu reflejo.'}],
+                'F': [{t:'Empieza con F', w:'fuego', h:'Produce calor pero quema.'}, {t:'Empieza con F', w:'flor', h:'Parte bonita de una planta.'}],
+                'G': [{t:'Empieza con G', w:'gato', h:'Animal que maúlla.'}, {t:'Empieza con G', w:'gorra', h:'Para taparse la cabeza.'}],
+                'H': [{t:'Empieza con H', w:'huevo', h:'Lo ponen las gallinas.'}, {t:'Empieza con H', w:'helado', h:'Postre dulce y muy frío.'}],
+                'I': [{t:'Empieza con I', w:'isla', h:'Tierra rodeada de agua.'}, {t:'Empieza con I', w:'iman', h:'Atrae metales.'}],
+                'J': [{t:'Empieza con J', w:'jabon', h:'Para lavarse las manos.'}, {t:'Empieza con J', w:'jirafa', h:'Animal de cuello largo.'}],
+                'K': [{t:'Contiene la K', w:'kiwi', h:'Fruta marrón peluda por fuera.'}, {t:'Empieza con K', w:'koala', h:'Marsupial australiano que duerme mucho.'}],
+                'L': [{t:'Empieza con L', w:'luna', h:'Satélite de la Tierra.'}, {t:'Empieza con L', w:'lapiz', h:'Sirve para escribir.'}],
+                'M': [{t:'Empieza con M', w:'mano', h:'Tiene cinco dedos.'}, {t:'Empieza con M', w:'manzana', h:'Fruta roja o verde.'}],
+                'O': [{t:'Empieza con O', w:'ojo', h:'Para ver el mundo.'}, {t:'Empieza con O', w:'oso', h:'Animal peludo grande.'}],
+                'P': [{t:'Empieza con P', w:'perro', h:'Mejor amigo del hombre.'}, {t:'Empieza con P', w:'pan', h:'Se compra en la panadería.'}],
+                'Q': [{t:'Contiene la Q', w:'queso', h:'Alimento de leche para ratones.'}, {t:'Contiene la Q', w:'raqueta', h:'Para jugar al tenis.'}],
+                'R': [{t:'Empieza con R', w:'reloj', h:'Para saber la hora.'}, {t:'Empieza con R', w:'raton', h:'Animal pequeño que come queso.'}],
+                'S': [{t:'Empieza con S', w:'sol', h:'Estrella que nos da calor.'}, {t:'Empieza con S', w:'silla', h:'Para sentarse.'}],
+                'T': [{t:'Empieza con T', w:'tren', h:'Va por las vías.'}, {t:'Empieza con T', w:'tenedor', h:'Para pinchar la comida.'}],
+                'U': [{t:'Empieza con U', w:'uva', h:'Fruta pequeña para el vino.'}, {t:'Empieza con U', w:'uno', h:'El primer número.'}],
+                'V': [{t:'Empieza con V', w:'vaca', h:'Animal que da leche.'}, {t:'Empieza con V', w:'viento', h:'Aire que se mueve.'}],
+                'W': [{t:'Contiene la W', w:'sandwich', h:'Dos panes con relleno.'}, {t:'Contiene la W', w:'kiwi', h:'Fruta con vitamina C.'}],
+                'X': [{t:'Contiene la X', w:'taxi', h:'Coche público que pagas.'}, {t:'Contiene la X', w:'examen', h:'Prueba en el colegio.'}],
+                'Y': [{t:'Empieza con Y', w:'yogur', h:'Lácteo cremoso.'}, {t:'Empieza con Y', w:'yema', h:'Parte amarilla del huevo.'}],
+                'Z': [{t:'Empieza con Z', w:'zapato', h:'Calzado para el pie.'}, {t:'Empieza con Z', w:'zorro', h:'Animal astuto.'}]
+            },
+            'medium': {
+                'A': [{w:'ajedrez', h:'Juego de reyes y peones.'}], 'B': [{w:'ballena', h:'Mamífero marino gigante.'}],
+                'C': [{w:'cerebro', h:'Órgano que controla el cuerpo.'}], 'D': [{w:'desierto', h:'Lugar muy seco con arena.'}],
+                'E': [{w:'espinaca', h:'Verdura que daba fuerza a Popeye.'}], 'F': [{w:'faraon', h:'Rey del antiguo Egipto.'}],
+                'G': [{w:'galaxia', h:'Conjunto de estrellas y planetas.'}], 'H': [{w:'hormiga', h:'Insecto muy trabajador.'}],
+                'I': [{w:'invierno', h:'Estación más fría del año.'}], 'J': [{w:'jardinero', h:'Persona que cuida las plantas.'}],
+                'K': [{w:'karate', h:'Arte marcial japonés.'}], 'L': [{w:'laberinto', h:'Lugar difícil de salir.'}],
+                'M': [{w:'martillo', h:'Herramienta para clavar.'}], 'O': [{w:'oceano', h:'Masa de agua salada gigante.'}],
+                'P': [{w:'pintura', h:'Lo que usa un artista.'}], 'Q': [{w:'quimica', h:'Ciencia de la materia.'}],
+                'R': [{w:'relampago', h:'Luz en el cielo en tormenta.'}], 'S': [{w:'semáforo', h:'Controla el tráfico.'}],
+                'T': [{w:'telescopio', h:'Para ver las estrellas.'}], 'U': [{w:'universo', h:'Todo lo que existe.'}],
+                'V': [{w:'volcan', h:'Montaña que echa lava.'}], 'W': [{w:'waterpolo', h:'Deporte acuático de pelota.'}],
+                'X': [{w:'xilofono', h:'Instrumento de láminas.'}], 'Y': [{w:'yacimiento', h:'Lugar con restos antiguos.'}],
+                'Z': [{w:'zoologico', h:'Parque de animales.'}]
+            },
+            'hard': {
+                'A': [{w:'altruismo', h:'Ayudar sin esperar nada.'}], 'B': [{w:'beligerante', h:'Actitud guerrera.'}],
+                'C': [{w:'cacofonia', h:'Sonido desagradable repetido.'}], 'D': [{w:'dicotomia', h:'División en dos partes.'}],
+                'E': [{w:'efimero', h:'Que dura muy poco.'}], 'F': [{w:'filantropo', h:'Amigo de la humanidad.'}],
+                'G': [{w:'garrulo', h:'Rústico o que habla mucho.'}], 'H': [{w:'hermetico', h:'Cerrado por completo.'}],
+                'I': [{w:'intríngulis', h:'Dificultad o misterio.'}], 'J': [{w:'jactancia', h:'Alabanza propia excesiva.'}],
+                'K': [{w:'anacrónica', h:'Fuera de su tiempo.'}], 'L': [{w:'locuacidad', h:'Calidad de hablar mucho.'}],
+                'M': [{w:'meticuloso', h:'Que cuida los detalles.'}], 'O': [{w:'ostensible', h:'Que se ve claramente.'}],
+                'P': [{w:'pusilánime', h:'Falta de valor y ánimo.'}], 'Q': [{w:'cloquear', h:'Sonido de la gallina.'}],
+                'R': [{w:'recalcitrante', h:'Obstinado o terco.'}], 'S': [{w:'subrepticio', h:'Hecho a escondidas.'}],
+                'T': [{w:'tergiversar', h:'Dar interpretación falsa.'}], 'U': [{w:'ubicuidad', h:'Estar en todas partes.'}],
+                'V': [{w:'vituperar', h:'Criticar duramente.'}], 'W': [{w:'darwinismo', h:'Teoría de la evolución.'}],
+                'X': [{w:'exiguo', h:'Muy escaso o insuficiente.'}], 'Y': [{w:'adyacente', h:'Situado al lado.'}],
+                'Z': [{w:'zalamero', h:'Que hace halagos falsos.'}]
+            },
+            'impossible': {
+                'A': [{w:'atrabiliario', h:'De genio violento.'}], 'B': [{w:'abigarrado', h:'Colores mal combinados.'}],
+                'C': [{w:'clepsidra', h:'Reloj de agua antiguo.'}], 'D': [{w:'desideratum', h:'Lo más deseable.'}],
+                'E': [{w:'entelequia', h:'Cosa irreal imaginaria.'}], 'F': [{w:'facundia', h:'Desenvoltura al hablar.'}],
+                'G': [{w:'paradigmatico', h:'Que sirve de modelo.'}], 'H': [{w:'heuristica', h:'Arte de inventar.'}],
+                'I': [{w:'idiosincrasia', h:'Rasgos distintivos.'}], 'J': [{w:'objetivismo', h:'Doctrina filosófica.'}],
+                'K': [{w:'kakistocracia', h:'Gobierno de los peores.'}], 'L': [{w:'lexicografia', h:'Técnica de diccionarios.'}],
+                'M': [{w:'mnemotecnia', h:'Trucos para memorizar.'}], 'O': [{w:'onirico', h:'Relativo a los sueños.'}],
+                'P': [{w:'procrastinar', h:'Aplazar tareas.'}], 'Q': [{w:'oblicuidad', h:'Inclinación de algo.'}],
+                'R': [{w:'oximoron', h:'Dos ideas opuestas juntas.'}], 'S': [{w:'sinestesia', h:'Mezcla de sensaciones.'}],
+                'T': [{w:'tautologia', h:'Repetición inútil.'}], 'U': [{w:'consuetudinario', h:'Que es por costumbre.'}],
+                'V': [{w:'vituperar', h:'Criticar duramente.'}], 'W': [{w:'showman', h:'Hombre espectáculo.'}],
+                'X': [{w:'exornar', h:'Embellecer con adornos.'}], 'Y': [{w:'proyeccion', h:'Acción de proyectar.'}],
+                'Z': [{w:'estoicismo', h:'Fortaleza ante desgracia.'}]
+            }
         };
-      });
-    }
 
-    function initGame() {
-      buildRosco();
-      document.getElementById('setup').classList.add('hidden');
-      document.getElementById('game').classList.remove('hidden');
-      document.getElementById('game').classList.add('flex');
-      
-      initSpeech();
-      drawRoscoUI();
-      running = true;
-      timeLeft = gameDuration;
-      startClock();
-      showClue();
-    }
+        let diff = 'easy';
+        let timeLeft = 120, totalTime = 120, timerInt = null;
+        let questions = [], curIdx = 0, cellStates = {}, running = false;
+        let recognition = null, isListening = false, audioCtx = null, analyser = null;
+        const syn = window.speechSynthesis;
 
-    function drawRoscoUI() {
-      const svg = document.getElementById('rsvg');
-      svg.innerHTML = '';
-      const cx = 210, cy = 210, radius = 175, n = currentRosco.length;
-      currentRosco.forEach((q, i) => {
-        const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.id = `c-${q.l}`;
-        g.setAttribute('class', 'c-def');
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', '18');
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', x); text.setAttribute('y', y + 5); text.setAttribute('text-anchor', 'middle');
-        text.textContent = q.l;
-        g.appendChild(circle); g.appendChild(text); svg.appendChild(g);
-        cellStates[q.l] = 'def';
-      });
-    }
-
-    function initSpeech() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        document.getElementById('speech-box').textContent = "Voz no disponible en este navegador.";
-        return;
-      }
-      recognition = new SR();
-      recognition.lang = 'es-AR';
-      recognition.continuous = false;
-      recognition.onstart = () => { 
-        listening = true; 
-        document.getElementById('speech-box').textContent = "Escuchando..."; 
-        document.getElementById('speech-box').classList.add('listening');
-      };
-      recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        document.getElementById('speech-box').textContent = `"${text}"`;
-        handleAnswer(text);
-      };
-      recognition.onend = () => { 
-        listening = false; 
-        document.getElementById('speech-box').classList.remove('listening');
-      };
-    }
-
-    function speak(txt, cb) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(txt);
-      u.lang = 'es-AR'; 
-      if(difficulty === 'hard') u.rate = 1.3;
-      else if(difficulty === 'impossible') u.rate = 1.5;
-      else u.rate = 1.1;
-
-      u.onend = cb;
-      window.speechSynthesis.speak(u);
-    }
-
-    function showClue() {
-      if (!running) return;
-      const q = currentRosco[currentIndex];
-      document.getElementById('letter-label').textContent = q.l;
-      document.getElementById('clue-type').textContent = q.type;
-      document.getElementById('clue-text').textContent = q.hint;
-      document.getElementById('fb-msg').textContent = '';
-      document.getElementById('manual-in').value = '';
-      updateCell(q.l, 'act');
-      processing = false;
-
-      speak(q.type + ". " + q.hint, () => {
-        if (running && !processing && recognition && !listening) {
-          try { recognition.start(); } catch(e) {}
+        function setDiff(lvl, btn) {
+            diff = lvl;
+            document.querySelectorAll('#diff-btns button').forEach(b => b.classList.remove('bg-gold', 'text-black'));
+            btn.classList.add('bg-gold', 'text-black');
         }
-      });
-    }
 
-    function handleAnswer(raw) {
-      if (processing || !running) return;
-      processing = true;
-      const clean = normalize(raw);
-      
-      const skipTerms = ["pasapalabra", "pasa", "paso", "siguiente"];
-      if (skipTerms.some(t => clean.includes(t))) {
-        btnPasapalabra();
-        return;
-      }
-
-      const q = currentRosco[currentIndex];
-      const correct = normalize(q.answer);
-      
-      if (clean === correct || clean.includes(correct)) {
-        processResult(true);
-      } else {
-        processResult(false);
-      }
-    }
-
-    function processResult(isOk) {
-      const q = currentRosco[currentIndex];
-      const fb = document.getElementById('fb-msg');
-      if (isOk) {
-        updateCell(q.l, 'ok');
-        fb.textContent = "¡CORRECTO!";
-        fb.className = "text-center font-bold text-lg text-green-500";
-        document.getElementById('sc-ok').textContent = parseInt(document.getElementById('sc-ok').textContent) + 1;
-        speak("¡Correcto!", nextLetter);
-      } else {
-        updateCell(q.l, 'no');
-        fb.textContent = `FALLO. Era: ${q.answer.toUpperCase()}`;
-        fb.className = "text-center font-bold text-lg text-red-500";
-        document.getElementById('sc-no').textContent = parseInt(document.getElementById('sc-no').textContent) + 1;
-        speak("Incorrecto. Era " + q.answer, nextLetter);
-      }
-    }
-
-    function btnPasapalabra() {
-      if (processing && !listening) return;
-      processing = true;
-      const q = currentRosco[currentIndex];
-      updateCell(q.l, 'sk');
-      document.getElementById('fb-msg').textContent = "PASAPALABRA";
-      document.getElementById('fb-msg').className = "text-center font-bold text-lg text-yellow-500";
-      nextLetter();
-    }
-
-    function nextLetter() {
-      let found = false;
-      let startSearch = (currentIndex + 1) % currentRosco.length;
-      
-      for (let i = 0; i < currentRosco.length; i++) {
-        let idx = (startSearch + i) % currentRosco.length;
-        if (cellStates[currentRosco[idx].l] === 'def' || cellStates[currentRosco[idx].l] === 'sk') {
-          currentIndex = idx;
-          found = true;
-          break;
+        function buildRosco() {
+            const letters = Object.keys(DB[diff]).sort();
+            questions = letters.map(l => {
+                const opt = DB[diff][l][Math.floor(Math.random() * DB[diff][l].length)];
+                return {
+                    l, 
+                    ans: opt.w, 
+                    hint: opt.h, 
+                    type: opt.t || (opt.h.toLowerCase().includes('contiene') ? 'Contiene la ' + l : 'Empieza con ' + l)
+                };
+            });
         }
-      }
-      
-      let pendientes = Object.values(cellStates).filter(s => s === 'sk' || s === 'def').length;
-      document.getElementById('sc-sk').textContent = pendientes;
 
-      if (!found || pendientes === 0) finishGame("¡ROSCO COMPLETADO!");
-      else setTimeout(showClue, 800);
-    }
+        function drawRoscoUI() {
+            const svg = document.getElementById('rsvg');
+            svg.innerHTML = '';
+            const cx=210, cy=210, r=170, n=questions.length;
+            questions.forEach((q, i) => {
+                const angle = (i/n) * 2 * Math.PI - Math.PI/2;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.id = `c-${q.l}`; g.setAttribute('class', 'c-def transition-all duration-500');
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '16');
+                const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                t.setAttribute('x', x); t.setAttribute('y', y+5); t.setAttribute('text-anchor', 'middle');
+                t.textContent = q.l;
+                g.appendChild(c); g.appendChild(t); svg.appendChild(g);
+                cellStates[q.l] = 'def';
+            });
+        }
 
-    function updateCell(letter, state) {
-      const g = document.getElementById(`c-${letter}`);
-      if (g) { g.setAttribute('class', `c-${state}`); cellStates[letter] = state; }
-    }
+        function initRecognition() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return alert("Tu navegador no soporta reconocimiento de voz.");
+            recognition = new SR();
+            recognition.lang = 'es-AR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
 
-    function startClock() {
-      const bar = document.getElementById('progress-bar');
-      timer = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
-        bar.style.width = `${(timeLeft / gameDuration) * 100}%`;
-        if (timeLeft <= 0) finishGame("¡TIEMPO AGOTADO!");
-      }, 1000);
-    }
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('mic-btn').classList.add('active');
+                document.getElementById('status-msg').textContent = "Escuchando...";
+                startVisualizer();
+            };
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('mic-btn').classList.remove('active');
+                document.getElementById('status-msg').textContent = "Presiona el micro para hablar";
+                stopVisualizer();
+            };
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                document.getElementById('manual-in').value = text;
+                handleAnswer(text);
+            };
+            recognition.onerror = (e) => {
+                console.error("Speech Error:", e.error);
+                if(e.error === 'network') document.getElementById('status-msg').textContent = "Error de red. Prueba escribir.";
+            };
+        }
 
-    function manualSubmit() {
-      const val = document.getElementById('manual-in').value;
-      if (val) handleAnswer(val);
-    }
+        async function startVisualizer() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioCtx.createMediaStreamSource(stream);
+                source.connect(analyser);
+            }
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            const wave = document.getElementById('mic-wave');
+            
+            function update() {
+                if (!isListening) return;
+                analyser.getByteFrequencyData(data);
+                let sum = 0;
+                for(let i=0; i<data.length; i++) sum += data[i];
+                const volume = sum / data.length;
+                const scale = 1 + (volume / 50); // Ajuste de sensibilidad
+                wave.style.transform = `scale(${scale})`;
+                requestAnimationFrame(update);
+            }
+            update();
+        }
 
-    function askExit() {
-      if (confirm("¿Querés salir? Se perderá la partida actual.")) location.reload();
-    }
+        function stopVisualizer() {
+            document.getElementById('mic-wave').style.transform = `scale(1)`;
+        }
 
-    function finishGame(reason) {
-      running = false;
-      clearInterval(timer);
-      window.speechSynthesis.cancel();
-      document.getElementById('game').classList.add('hidden');
-      document.getElementById('results').classList.remove('hidden');
-      document.getElementById('res-title').textContent = reason;
-      
-      const ok = document.getElementById('sc-ok').textContent;
-      const no = document.getElementById('sc-no').textContent;
-      document.getElementById('res-ok').textContent = ok;
-      document.getElementById('res-no').textContent = no;
-      document.getElementById('res-sk').textContent = currentRosco.length - (parseInt(ok) + parseInt(no));
+        function startGame() {
+            totalTime = parseInt(document.getElementById('time-input').value) || 120;
+            timeLeft = totalTime;
+            buildRosco();
+            drawRoscoUI();
+            initRecognition();
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            document.getElementById('game').classList.add('flex');
+            running = true;
+            startClock();
+            showClue();
+        }
 
-      const list = document.getElementById('review-list');
-      list.innerHTML = '';
-      currentRosco.forEach(q => {
-        const st = cellStates[q.l];
-        const row = document.createElement('div');
-        row.className = `p-3 rounded-xl border ${st==='ok'?'bg-green-500/10 border-green-500/20':st==='no'?'bg-red-500/10 border-red-500/20':'bg-slate-800/50 border-slate-700'} flex flex-col gap-1`;
-        row.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bebas text-xl ${st==='ok'?'text-green-500':st==='no'?'text-red-500':'text-yellow-500'}">${q.l} - ${q.type}</span>
-            <span class="font-bold text-sm uppercase text-white">${q.answer}</span>
-          </div>
-          <p class="text-[11px] text-slate-400 italic">${q.hint}</p>
-        `;
-        list.appendChild(row);
-      });
-    }
+        function showClue() {
+            if (!running) return;
+            const q = questions[curIdx];
+            document.getElementById('letter-label').textContent = q.l;
+            document.getElementById('clue-type').textContent = q.type;
+            document.getElementById('clue-text').textContent = q.hint;
+            document.getElementById('manual-in').value = '';
+            updateCell(q.l, 'act');
 
-    // Initialize display
-    updateTimerDisplay();
-  </script>
+            // Hablar pista y luego abrir mic
+            syn.cancel();
+            const ut = new SpeechSynthesisUtterance(`${q.type}: ${q.hint}`);
+            ut.lang = 'es-AR'; ut.rate = 1;
+            ut.onend = () => {
+                if (running && !isListening) try { recognition.start(); } catch(e){}
+            };
+            syn.speak(ut);
+        }
+
+        function handleAnswer(raw) {
+            if (!running) return;
+            const clean = normalize(raw);
+            const q = questions[curIdx];
+            
+            if (clean === "pasapalabra" || clean === "paso" || clean === "pasar") {
+                btnPasapalabra();
+                return;
+            }
+
+            if (clean === normalize(q.ans)) {
+                updateCell(q.l, 'ok');
+                document.getElementById('sc-ok').textContent = parseInt(document.getElementById('sc-ok').textContent) + 1;
+                speakResult("¡Correcto!");
+            } else {
+                updateCell(q.l, 'no');
+                document.getElementById('sc-no').textContent = parseInt(document.getElementById('sc-no').textContent) + 1;
+                speakResult(`Incorrecto. Era ${q.ans}`);
+            }
+        }
+
+        function speakResult(msg) {
+            syn.cancel();
+            const ut = new SpeechSynthesisUtterance(msg);
+            ut.lang = 'es-AR';
+            ut.onend = () => setTimeout(nextLetter, 400);
+            syn.speak(ut);
+        }
+
+        function nextLetter() {
+            let found = false;
+            for (let i = 1; i <= questions.length; i++) {
+                let idx = (curIdx + i) % questions.length;
+                if (cellStates[questions[idx].l] === 'def' || cellStates[questions[idx].l] === 'sk') {
+                    curIdx = idx;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) finish("¡COMPLETADO!");
+            else showClue();
+        }
+
+        function btnPasapalabra() {
+            updateCell(questions[curIdx].l, 'sk');
+            nextLetter();
+        }
+
+        function updateCell(ltr, st) {
+            const g = document.getElementById(`c-${ltr}`);
+            if (g) g.setAttribute('class', `c-${st}`);
+            cellStates[ltr] = st;
+        }
+
+        function normalize(t) {
+            return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
+        }
+
+        function toggleManualMic() {
+            if (isListening) recognition.stop();
+            else recognition.start();
+        }
+
+        function manualSubmit() {
+            handleAnswer(document.getElementById('manual-in').value);
+        }
+
+        function startClock() {
+            timerInt = setInterval(() => {
+                timeLeft--;
+                const m = Math.floor(timeLeft/60), s = timeLeft%60;
+                document.getElementById('timer').textContent = `${m}:${s<10?'0'+s:s}`;
+                if (timeLeft <= 0) finish("¡TIEMPO AGOTADO!");
+            }, 1000);
+        }
+
+        function finish(reason) {
+            running = false;
+            clearInterval(timerInt);
+            syn.cancel();
+            document.getElementById('game').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('res-title').textContent = reason;
+            document.getElementById('res-ok').textContent = document.getElementById('sc-ok').textContent;
+            document.getElementById('res-no').textContent = document.getElementById('sc-no').textContent;
+            
+            // Llenar revisión
+            const list = document.getElementById('review-list');
+            list.innerHTML = questions.map(q => {
+                const st = cellStates[q.l];
+                const color = st === 'ok' ? 'text-green-400' : (st === 'no' ? 'text-red-400' : 'text-yellow-400');
+                return `<div class="border-b border-slate-800 pb-1 mb-1">
+                    <span class="font-bold ${color}">${q.l}:</span> ${q.ans} <span class="text-[10px] opacity-50 block">${q.hint}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // Inicializar botón de dificultad por defecto
+        setDiff('easy', document.querySelectorAll('#diff-btns button')[0]);
+    </script>
 </body>
 </html>
